@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+/* look in the inspector for what axis--x refers to */
+.axis--x path {
+  /* changing this affects whether the x-axis is drawn */
+  display: none;
+}
+
+.line {
+  /* try changing the fill---notice how weird it looks! */
+  /* that is because we do not have closed polygons. */
+  fill: none;
+  stroke: steelblue;
+  
+  /* you can slide this value back and forth to see which lines are impacted */
+  stroke-width: 1.5px;
+}
+
+/* lets make our svg area more visible */
+body {
+  background-color: black;
+  margin: 0px;
+}
+  
+svg {
+  background-color: whitesmoke;
+}
+
+/* make it really clear where the plot area is inside the svg */
+rect#plot {
+  fill: white;
+  stroke: none;
+}
+</style>
+<svg width="960" height="500"></svg>
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script>
+
+var svg = d3.select("svg"),
+    margin = {top: 20, right: 80, bottom: 30, left: 50},
+    width = svg.attr("width") - margin.left - margin.right,
+    height = svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// make it really clear where the plot area is inside the svg
+g.append("rect")
+  .attr("id", "plot")
+  .attr("x", 0)
+  .attr("y", 0)
+  .attr("width", width)
+  .attr("height", height);
+  
+var parseTime = d3.timeParse("%Y%m%d");
+
+// what is parseTime? use the console!
+// console.log(parseTime);
+// console.log(typeof parseTime);
+// console.log(parseTime("20160207"));
+  
+var x = d3.scaleTime().range([0, width]),
+    y = d3.scaleLinear().range([height, 0]),
+    z = d3.scaleOrdinal(d3.schemeCategory10);
+
+// of course d3 has a built-in time scale!
+// this makes our lives easier if we have date objects
+  
+// note the scales here do not have domains set
+// that will happen when the data is loaded
+
+// https://github.com/d3/d3-shape#lines
+var line = d3.line()
+    .curve(d3.curveBasis)
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.temperature); });
+
+// we have another function here!
+// console.log(typeof line);
+  
+// it will help us draw lines from our data
+// the x() and y() calls have accessor functions defined
+// these tell d3 what to use in our data for x-position and y-position
+
+// try changing the "curve" type to:
+// curveCardinal, curveCatmullRom, curveLinear, curveNatural, curveStep
+// https://github.com/d3/d3-shape#curves
+// line.curve(d3.curveStep);
+
+// remember data is loaded asynchronously!
+// https://github.com/d3/d3-request/blob/master/README.md#tsv
+// console.log("before d3.tsv()");
+  
+// the type parameter is a row accessor function (see below)
+  
+d3.tsv("test/data.tsv", type, function(error, data) {
+  if (error) throw error;
+  // console.log("inside d3.tsv()");
+
+  // whoa, what?
+  var cities = data.columns.slice(1).map(function(id) {
+    return {
+      id: id,
+      values: data.map(function(d) {
+        return {date: d.date, temperature: d[id]};
+      })
+    };
+  });
+  
+  // if we log this, note we get objects
+  // each object has an "id" and "values"
+  // console.log(cities);
+  
+  // compare that to data
+  // console.log(data);
+  
+  // our data has several properties
+  // console.log(data.columns);
+  // console.log(data.length);
+  
+  // slice is built into javascript
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
+  // console.log(data.columns.slice(1));
+  
+  // map is also built into javascript
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map
+	// console.log(data.columns.slice(1).map(function(potato) { return potato.toUpperCase(); }));
+  // console.log(data.columns.slice(1).map(function(potato) { return {"id": potato}; }));
+  
+  // so what is the second data.map() call doing?
+  // console.log(data);
+  // console.log(data.map(function(orange) { return orange["New York"];}));
+  
+  // now that our data is in a useful format
+  // we can set our domains for our scales
+  
+  // https://github.com/d3/d3-array#extent
+  x.domain(d3.extent(data, function(d) { return d.date; }));
+
+  // https://github.com/d3/d3-array#min
+  // have to calculate min for each city first (min of NY, min of SF, etc.)
+  // then calculate the min of the three city minimums
+  // console.log(d3.min(cities[0].values, function(d) { return d.temperature; }));
+  // console.log(d3.min(cities[1].values, function(d) { return d.temperature; }));
+  // console.log(d3.min(cities[2].values, function(d) { return d.temperature; }));
+  
+  y.domain([
+    d3.min(cities, function(c) { return d3.min(c.values, function(d) { return d.temperature; }); }),
+    d3.max(cities, function(c) { return d3.max(c.values, function(d) { return d.temperature; }); })
+  ]);
+
+  // this maps our city names to colors
+  z.domain(cities.map(function(c) { return c.id; }));
+	// console.log(z("New York"));
+  
+  // we can finally draw our axis lines
+  
+  g.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+
+  g.append("g")
+      .attr("class", "axis axis--y")
+      .call(d3.axisLeft(y))
+  	// ooo fancy text stuff so we can label our axis!
+    .append("text")
+  		// we have seen translate transforms already
+  		// we can also rotate, but this form rotates around 0,0
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", "0.71em")
+      .attr("fill", "#000")
+      .text("Temperature, ºF");
+
+  // okay now we create a group per city
+  // verify this in the elements view!
+  var city = g.selectAll(".city")
+    .data(cities)
+    .enter().append("g")
+      .attr("class", "city");
+  
+  // need this if we want to add marks
+  // line.curve(d3.curveLinear);
+
+  // create one line per city using our generator
+  city.append("path")
+      .attr("class", "line")
+      .attr("d", function(d) { return line(d.values); })
+      .style("stroke", function(d) { return z(d.id); });
+
+  // more fancy text code! 
+  // this places city names at the end of the lines
+  city.append("text")
+  		// datum() is different from data()
+  		// https://github.com/d3/d3-selection/blob/master/README.md#selection_datum
+  		// it does not create enter/update/exit selections
+  		// our "data" is each city name and the *last* value
+      .datum(function(d) { return {id: d.id, value: d.values[d.values.length - 1]}; })
+  		// we will shift our label text based on the last date and last temperature value
+      .attr("transform", function(d) { return "translate(" + x(d.value.date) + "," + y(d.value.temperature) + ")"; })
+      .attr("x", 3)
+      .attr("dy", "0.35em")
+      .style("font", "10px sans-serif")
+      .text(function(d) { return d.id; });
+  
+  // so, can we add line markers to this easily?
+  // we needed once line per city before
+  // but now we need several circles per city
+  // how do we do that?
+  /*
+  var marks = city.append("g")
+  	.style("stroke", function(d) { return z(d.id); })
+  	.selectAll("circle")
+  	.data(function(d) { return d.values; })
+ 		.enter()
+  		.append("circle")
+  		.attr("cx", function(d) { return x(d.date); })
+  		.attr("cy", function(d) { return y(d.temperature); })
+  		.attr("r", 3)
+  		.style("fill", "white");
+  */
+  // okay so that looks terrible but you get the idea
+  
+});
+// console.log("after d3.tsv()");
+
+// this is our row accessor function
+// it tells d3 how to convert our data for every row
+function type(d, _, columns) {
+  // console.log(d, columns);
+  
+  // we need to convert the date string to a date object
+  d.date = parseTime(d.date);
+  
+  // mmm, a one-line for loop... lets break this down
+  for (var i = 1, n = columns.length, c; i < n; ++i) d[c = columns[i]] = +d[c];
+  
+  // first three variables are declared (i, n, and c)
+  // only i and n are initialized
+  
+  // the loop continues until i < n and increments i each loop
+  
+  // inside the loop we are setting c = columns[i] which is the city name
+  // this is the "property" of the object
+  // and we are just making sure the value is converted from a string to a number
+  
+  // so the one line above is equivalent to:
+  
+  // var n = columns.length;
+  // var c;  
+  
+  // for (var i = 1; i < n; ++i) {
+  //   c = columns[i];
+  //   d[c] = +d[c];
+  // }
+  
+  return d;
+}
+
+</script>
