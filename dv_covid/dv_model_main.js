@@ -41,7 +41,7 @@ DvModel.prototype.drawExampleChart = function() {
         });  
 
 		//load data
-data = d3.csv("test/newdataone.csv", type, function(error, data) {
+data = d3.csv("test/1_newdataone.csv", type, function(error, data) {
 			if (error) throw error;
 
 
