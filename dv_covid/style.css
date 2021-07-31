@@ -1,0 +1,42 @@
+*{
+    font-family: Lato;
+}
+
+.axis-x path {
+    stroke: #000;
+}
+
+.line {
+    fill: none;
+    stroke-width: 1.5px;
+    stroke-linejoin: "round";
+    stroke-linecap: "round";
+}
+
+.line:hover {
+    stroke-width: 2px;
+}
+
+#container{
+display: flex;
+flex-wrap: wrap;
+}
+#headline{
+    min-width:100%;
+}
+
+#menu{
+    display: inline;
+    width: 100%;
+    /* border:1px solid black; */
+    /* padding: 1%; */
+}
+
+#nation{
+    display: inline;
+    padding-left: 1%;
+}
+
+span{
+    color:rgb(25, 159, 139)
+}

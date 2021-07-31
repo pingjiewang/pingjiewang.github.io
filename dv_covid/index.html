@@ -1,1 +1,44 @@
-Hello DV_Covid
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+        crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script type="text/javascript" src="dv_model_main.js"></script>
+
+</head>
+<body>
+	<div id="container">
+		<p>Click on one of the following countries to see how much money they spent on military budget (in million USD).  
+        </p>
+	<div id="menu"></div>
+
+	<div class="graph">
+		<svg width="800" height="500"></svg>
+	</div>
+
+	</div>
+
+
+
+
+
+    <script type="text/javascript">
+        //define time format
+
+        $(document).ready(function(){
+            //create model
+            // mapSelectableModel = new samhsa.locator.MapSelectableModelNormal(modelOptions);
+            // mapSelectableModel.hideSidePanelFacilityListing();
+            new DvModel() 
+        }); //end of document.ready()
+
+    </script>
+</body>
+</html>
