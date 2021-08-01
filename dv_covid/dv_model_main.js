@@ -156,7 +156,7 @@ DvModel.prototype.drawChart_newCases = function() {
             },
             width = svg.attr("width") - margin.left - margin.right,
             height = svg.attr("height") - margin.top - margin.bottom,
-            g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            chart = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
     
         //define scales
@@ -202,7 +202,7 @@ DvModel.prototype.drawChart_newCases = function() {
 
 
         //append x axis
-        g.append("g")
+        chart.append("g")
             .attr("class", "axis axis-x")
             .attr("transform", "translate(0," + height + ")")
             .call(d3.axisBottom(x))
@@ -222,7 +222,7 @@ DvModel.prototype.drawChart_newCases = function() {
             .text("Source:Sipri");
 
         //append y axis
-        g.append("g")
+        chart.append("g")
             .attr("class", "axis axis-y")
             .call(d3.axisLeft(y))
             .append("text")
@@ -236,7 +236,7 @@ DvModel.prototype.drawChart_newCases = function() {
 
         //append state data to svg
 
-        let state = g.selectAll(".state")
+        let state = chart.selectAll(".state")
         .data(states)
         .enter()
         .append("g")
@@ -266,6 +266,51 @@ DvModel.prototype.drawChart_newCases = function() {
             .style("font", "11px sans-serif")
             .attr("opacity", 1)
                 .text(function(d) { return d.id; });
+
+
+        //tooltip
+        const tooltip = d3.select('#tooltip');
+        const tooltipLine = chart.append('line');
+            
+        let removeTooltip = function () {
+            if (tooltip) tooltip.style('display', 'none');
+            if (tooltipLine) tooltipLine.attr('stroke', 'none');
+        }
+
+        let drawTooltip= function () {
+            // const date = Math.floor((x.invert(d3.mouse(tipBox.node())[0]) + 5) / 10) * 10;
+            const date = x.invert(d3.mouse(tipBox.node())[0]);
+            
+            // states.sort((a, b) => {
+            //   return b.history.find(h => h.year == year).population - a.history.find(h => h.year == year).population;
+            // })  
+              
+            tooltipLine.attr('stroke', 'black')
+              .attr('x1', x(date))
+              .attr('x2', x(date))
+              .attr('y1', 0)
+              .attr('y2', height);
+            
+            tooltip.html(date)
+              .style('display', 'block')
+              .style('left', d3.event.pageX + 20)
+              .style('top', d3.event.pageY - 20)
+              .selectAll()
+              .data(states).enter()
+              .append('div')
+            //   .style('color', d => d.color)
+              .html(d => d.name + ': ' + d.values[0].cases_new);
+              // .html(d => d.name + ': ' + d.history.find(h => h.year == year).population);
+          
+        }
+
+        let tipBox = chart.append('rect')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('opacity', 0)
+            .on('mousemove', drawTooltip)
+            .on('mouseout', removeTooltip)   
+
 
 }   
 

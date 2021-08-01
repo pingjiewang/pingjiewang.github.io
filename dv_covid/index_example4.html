@@ -32,6 +32,7 @@ let states, tipBox;
 d3.json('test/4_state-populations.json', d => {
   states = d;
 
+  //graph lines
   chart.selectAll()
     .data(states).enter()
     .append('path')
@@ -41,6 +42,7 @@ d3.json('test/4_state-populations.json', d => {
     .datum(d => d.history)
     .attr('d', line);
   
+  //line labels
   chart.selectAll()
     .data(states).enter()
     .append('text')
@@ -51,6 +53,7 @@ d3.json('test/4_state-populations.json', d => {
     .attr('dx', '.5em')
     .attr('y', d => y(d.currentPopulation)); 
   
+  //hoverover box
   tipBox = chart.append('rect')
     .attr('width', width)
     .attr('height', height)
@@ -86,5 +89,6 @@ function drawTooltip() {
     .append('div')
     .style('color', d => d.color)
     .html(d => d.name + ': ' + d.history.find(h => h.year == year).population);
+
 }
 </script>
