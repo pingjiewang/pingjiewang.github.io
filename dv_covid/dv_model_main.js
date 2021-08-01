@@ -1,6 +1,7 @@
 function DvModel() {
     console.log ("in DvModel...")
-    this.state_names_selected = ["South Dakota", "Tennessee", "Texas", "Utah", "Vermont","Maryland"];
+    var initialSelectedStates=["South Dakota", "Tennessee", "Texas", "Utah", "Vermont","Maryland"];
+    this.state_names_selected_set = new Set(initialSelectedStates);
     this.init()
 }
 
@@ -10,23 +11,42 @@ DvModel.prototype.init = function() {
     this.startWithLoadingData()
 };
 
+DvModel.prototype.notifyStateSelectionChanged = function (state_name, value) {
+    console.log("notifyStateSelectionChanged() ...")
+    //todo: temporary
+    // this.startWithLoadingData();
+    this.processDataForDrawingChart();
+    
+    this.renderStateCheckboxes();
+    // this.updateChart_newCases();
+    $('.graph svg').empty();
+    this.drawChart_newCases();
+
+
+}    
+
+DvModel.prototype.isStateSelected = function (state_name) {
+    return this.state_names_selected_set.has(state_name);
+}
+
 DvModel.prototype.setSelectedState = function (state_name, value) {
     console.log("going to set "+state_name +" , to "+ value);
-    let stateNameSet = new Set(this.state_names_selected);
-    let isCurrentlySelected = stateNameSet.has(state_name);
+    // let stateNameSet = this.state_names_selected_set;
+    let isCurrentlySelected = this.isStateSelected(state_name);
     //case 1: to add
     if (value){
         if (isCurrentlySelected) return;
-        this.state_names_selected.push(state_name);
-        console.log("to add: will update chart...")
+        this.state_names_selected_set.add(state_name)
+        console.log("to add: will update chart...");
+        this.notifyStateSelectionChanged();
         return;
     }
     //case 2: to remove
     if (!isCurrentlySelected) return;
-    stateNameSet.delete(state_name);
-    this.state_names_selected = Array.from(stateNameSet)
+    this.state_names_selected_set.delete(state_name);
+    // this.state_names_selected = Array.from(stateNameSet)
+    this.notifyStateSelectionChanged();
     console.log("to remove: will update chart...")
-
 }
 
 DvModel.prototype.startWithLoadingData = function() {
@@ -46,44 +66,47 @@ DvModel.prototype.startWithLoadingData = function() {
     }
     var thisModel=this;
 
-    var groupBy = function (xs, f) {
-        return xs.reduce((r, v, i, a, k = f(v)) => ((r[k] || (r[k] = [])).push(v), r), {});
-    }
+    // var groupBy = function (xs, f) {
+    //     return xs.reduce((r, v, i, a, k = f(v)) => ((r[k] || (r[k] = [])).push(v), r), {});
+    // }
 
     d3.csv("data_processing_r/us-states_processed.csv", type, function(error, data) {
         if (error) throw error;
-        console.log ("in loadData!")
-        console.log(data)
-
-        //processing data
-        // const cars = [{ make: 'audi', model: 'r8', year: '2012' }, { make: 'audi', model: 'rs5', year: '2013' }, { make: 'ford', model: 'mustang', year: '2012' }, { make: 'ford', model: 'fusion', year: '2015' }, { make: 'kia', model: 'optima', year: '2012' }];
+        //save the data as a model state
         thisModel.raw_data = data;
-        thisModel.state_data  = groupBy(data, (c) => c.state);
-        thisModel.state_names_all = Object.keys(thisModel.state_data);
-       
-       // var state_names = Object.keys(this.state_data);
-        // console.log (state_names)
-        var state_dictionary = thisModel.state_data;
-        var data = thisModel.raw_data;
-    
-        thisModel.states = thisModel.state_names_selected.map(function (state_name){
-            return {
-                id : state_name,
-                values : state_dictionary[state_name]
-            }
-        });
 
+        //processed the data for creating chart
+        thisModel.processDataForDrawingChart();
 
+        //trigger Drawing function
         thisModel.renderStateCheckboxes()
         thisModel.drawChart_newCases();
+
 
     });
 
 };
 
+DvModel.prototype.processDataForDrawingChart= function (){
+    //processing raw data
+    this.state_data  = groupBy(this.raw_data, (c) => c.state);
+    this.state_names_all = Object.keys(this.state_data);
+    
+    var state_dictionary = this.state_data;
+
+    //states will only contains data from selected states
+    this.states = Array.from(this.state_names_selected_set).map(function (state_name){
+        return {
+            id : state_name,
+            values : state_dictionary[state_name]
+        }
+    });
+
+}
 
 DvModel.prototype.renderStateCheckboxes= function (){
     //render checkboxes for all state in raw_data
+    $('#menu').empty();
     for (let i = 0; i < this.state_names_all.length; i++) {
         var state_name = this.state_names_all[i];
         var checkbox = $("<input></input>");
@@ -91,6 +114,11 @@ DvModel.prototype.renderStateCheckboxes= function (){
         checkbox.attr('id','cb_state_name');
         checkbox.attr('name',state_name);
         checkbox.attr('value',state_name);
+
+        if (this.isStateSelected(state_name)) {
+            checkbox.prop('checked', true);
+        }
+
         var label = $("<label></label>");
         label.attr('for',state_name);
         label.append(state_name);
@@ -99,7 +127,9 @@ DvModel.prototype.renderStateCheckboxes= function (){
 
         divcheck.append(checkbox);
         divcheck.append(label);
+
         $('#menu').append(divcheck);
+        // $('#menu').replaceWith(divcheck);
 
         let thisModel = this;
         checkbox.change(function(event) {
@@ -109,40 +139,6 @@ DvModel.prototype.renderStateCheckboxes= function (){
             thisModel.setSelectedState(state_name, status);
         });
 
-    }//for    
-}
-
-    
-DvModel.prototype.renderStateCheckboxes0 = function (){
-    //render checkboxes for all state in raw_data
-    for (let i = 0; i < this.state_names_all.length; i++) {
-        var tick = document.createElement('input');
-        tick.type = 'checkbox';
-        tick.id = 'myCheckbox';
-        var state_name = this.state_names_all[i];
-        // var state = this.state_data[state_name]
-        tick.name = state_name;
-        tick.value = state_name;
-
-        var label = document.createElement('label');
-        label.for = state_name
-        label.appendChild(document.createTextNode(state_name));
-        var divcheck = document.createElement('div');
-        // divcheck.id="state_" + state_name;
-        divcheck.className="nation" ;
-
-        // tick.appendChild(document.createTextNode(state_name));
-        divcheck.appendChild(tick);
-        divcheck.appendChild(label);
-        document.getElementById("menu").appendChild(divcheck);
-
-        tick.addEventListener("click", function() {
-            console.log ("tick clicked!", this.value)
-            // var lineSelected = this.value;
-            // var svgline = d3.select('#line-' + lineSelected);
-            // var textline = d3.select('#text-' + lineSelected);
-
-        });
     }//for    
 }
 
@@ -179,22 +175,6 @@ DvModel.prototype.drawChart_newCases = function() {
                     return y(d.cases_new);
             });  
     
-
-        // // var state_names = Object.keys(this.state_data);
-        // // console.log (state_names)
-        // var state_dictionary = this.state_data;
-        // var data = this.raw_data;
-    
-       
-        
-        // this.states = this.state_names_selected.map(function (state_name){
-        //     return {
-        //         id : state_name,
-        //         values : state_dictionary[state_name]
-        //     }
-        // });
-
-
         //define x axis
         x.domain(d3.extent(this.raw_data, function(d) {
             return d.date;
@@ -287,11 +267,112 @@ DvModel.prototype.drawChart_newCases = function() {
             .attr("opacity", 1)
                 .text(function(d) { return d.id; });
 
-          
-
-        // });//end load data
-    
 }   
+
+DvModel.prototype.updateChart_newCases = function() {
+
+    let states = this.states;
+
+    //define chart margins
+    let svg = d3.select("svg");
+
+    let margin = {
+            top: 30,
+            right: 80,
+            bottom: 40,
+            left: 50
+        },
+        width = svg.attr("width") - margin.left - margin.right,
+        height = svg.attr("height") - margin.top - margin.bottom,
+        g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    //define scales
+    let x = d3.scaleTime().range([0, width]);
+    let y = d3.scaleLinear().range([height, 0]);
+    //color scale
+    let z = d3.scaleOrdinal(d3.schemeCategory20);
+
+    //define line generator
+    let line = d3.line()
+        .curve(d3.curveBasis)
+        .x(function(d) {
+            return x(d.date);
+        })
+        .y(function(d) {
+                return y(d.cases_new);
+        });  
+
+    //define x axis
+    x.domain(d3.extent(this.raw_data, function(d) {
+        return d.date;
+    }));
+
+    //define y axis
+    y.domain([
+        d3.min(states, function(c) {
+            return d3.min(c.values, function(d) {
+                return d.cases_new;
+            });
+        }),
+        d3.max(states, function(c) {
+            return d3.max(c.values, function(d) {
+                return d.cases_new;
+            });
+        })
+    ]);
+
+    //define color scale
+    z.domain(states.map(function(c) {
+        return c.id;
+    }));
+
+    //update x-axis and y-axis with animations
+    svg.selectAll(".axis-x").transition()
+    .duration(1000)
+    .call(d3.axisBottom(x))
+
+    svg.selectAll(".axis-y").transition()
+    .duration(3000)
+    .call(d3.axisLeft(y));
+
+
+    //update line chart based on the new state data within svg
+    let state = g.selectAll(".state")
+    .data(states);
+
+    state.enter()
+    .append("g")
+    .attr("class", "state")
+    .transition()
+    .duration(3000);
+
+
+    // // append state path to svg
+    // state.append("path")
+    //     .attr("class", "line")
+    //     .attr('id', function(d){ return 'line-' + d.id })
+    //     .attr("d", function(d) {return line(d.values); })
+    //     .style("stroke", function(d) {return z(d.id);})
+    //     .attr("opacity", 1);
+
+
+    // var longY = function (d) {return d.value.date.length};
+    // var longE = function (d) {return d.value.date.length};
+
+    // // append state labels to svg
+    // state.append("text")
+    //     .datum(function(d) { return {id: d.id, value: d.values[d.values.length - 1]}; })
+    //     .attr("transform", function(d) { return "translate(" + x(d.value.date) + "," + y(d.value.cases_new) + ")"; })
+    //     .attr("x", 3)
+    //     .attr('id', function(d){ return 'text-' + d.id })
+    //     .attr("dy", "0.35em")
+    //     .style("font", "11px sans-serif")
+    //     .attr("opacity", 1)
+    //         .text(function(d) { return d.id; });
+
+}  
+
 
 
 DvModel.prototype.drawExampleChart = function() {
@@ -498,4 +579,9 @@ function type(d, _, columns) {
 
     //bind column data to year
     return d;
+}
+
+
+function groupBy (xs, f) {
+    return xs.reduce((r, v, i, a, k = f(v)) => ((r[k] || (r[k] = [])).push(v), r), {});
 }
