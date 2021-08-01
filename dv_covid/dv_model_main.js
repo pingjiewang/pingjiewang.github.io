@@ -7,12 +7,30 @@ function DvModel() {
 DvModel.prototype.init = function() {
     console.log ("in DvModel.init()...")
     // this.drawExampleChart()
-    this.loadData()
+    this.startWithLoadingData()
 };
 
-DvModel.prototype.loadData = function() {
+DvModel.prototype.setSelectedState = function (state_name, value) {
+    console.log("going to set "+state_name +" , to "+ value);
+    let stateNameSet = new Set(this.state_names_selected);
+    let isCurrentlySelected = stateNameSet.has(state_name);
+    //case 1: to add
+    if (value){
+        if (isCurrentlySelected) return;
+        this.state_names_selected.push(state_name);
+        console.log("to add: will update chart...")
+        return;
+    }
+    //case 2: to remove
+    if (!isCurrentlySelected) return;
+    stateNameSet.delete(state_name);
+    this.state_names_selected = Array.from(stateNameSet)
+    console.log("to remove: will update chart...")
+
+}
+
+DvModel.prototype.startWithLoadingData = function() {
     var parseTime1 = d3.timeParse("%Y-%m-%d");
-    console.log ("testing date = ", parseTime1("2020-03-20"))
 
     var type = function (d, _, columns) {
         d.date = parseTime1(d.date);
@@ -63,7 +81,39 @@ DvModel.prototype.loadData = function() {
 
 };
 
-DvModel.prototype.renderStateCheckboxes = function (){
+
+DvModel.prototype.renderStateCheckboxes= function (){
+    //render checkboxes for all state in raw_data
+    for (let i = 0; i < this.state_names_all.length; i++) {
+        var state_name = this.state_names_all[i];
+        var checkbox = $("<input></input>");
+        checkbox.attr('type','checkbox');
+        checkbox.attr('id','cb_state_name');
+        checkbox.attr('name',state_name);
+        checkbox.attr('value',state_name);
+        var label = $("<label></label>");
+        label.attr('for',state_name);
+        label.append(state_name);
+        var divcheck = $("<div></div>");
+        divcheck.addClass("nation");
+
+        divcheck.append(checkbox);
+        divcheck.append(label);
+        $('#menu').append(divcheck);
+
+        let thisModel = this;
+        checkbox.change(function(event) {
+            console.log ("input changed")
+            let state_name = $(this).val();
+            var status = $(this).is(':checked');
+            thisModel.setSelectedState(state_name, status);
+        });
+
+    }//for    
+}
+
+    
+DvModel.prototype.renderStateCheckboxes0 = function (){
     //render checkboxes for all state in raw_data
     for (let i = 0; i < this.state_names_all.length; i++) {
         var tick = document.createElement('input');
