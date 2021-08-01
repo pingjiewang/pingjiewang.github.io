@@ -42,13 +42,14 @@ DvModel.prototype.loadData = function() {
         thisModel.raw_data = data;
         thisModel.state_data  = groupBy(data, (c) => c.state);
        
-        thisModel.drawChart(thisModel.state_data);
+        thisModel.drawChart_newCases(thisModel.state_data);
 
     });
 
 };
 
-DvModel.prototype.drawChart = function(state_data) {
+DvModel.prototype.drawChart_newCases = function(state_data) {
+
         //define chart margins
         let svg = d3.select("svg"),
             margin = {
@@ -78,32 +79,15 @@ DvModel.prototype.drawChart = function(state_data) {
                     return y(d.cases_new);
             });  
     
-        // //load data
-        // data = d3.csv("test/1_newdataone.csv", type, function(error, data) {
-        //         if (error) throw error;
-    
-        //parse data
-        // var countries = data.columns.slice(1).map(function(id) {
-        //     return {
-        //         id: id,
-        //         values: data.map(function(d) {
-        //             return {
-        //                 Year: d.Year,
-        //                 expenditure: d[id]
-
-        //             };
 
 
-        //         })
-        //     };
-        // });
-        //
         var state_names = Object.keys(this.state_data);
         var state_dictionary = this.state_data;
         var data = this.raw_data;
+        var state_names_selected = state_names.slice(50);//todo: tempoary
        
         
-        var states = state_names.map(function (state_name){
+        var states = state_names_selected.map(function (state_name){
             return {
                 id : state_name,
                 values : state_dictionary[state_name]
@@ -169,19 +153,18 @@ DvModel.prototype.drawChart = function(state_data) {
             .text("Covid-19 daily new cases");
 
 
-        //append country data to svg
-        let states_selected = states.slice(50)//tempory
+        //append state data to svg
 
-        let country = g.selectAll(".country")
-        .data(states_selected)
+        let state = g.selectAll(".state")
+        .data(states)
         .enter()
         .append("g")
-        .attr("class", "country")
+        .attr("class", "state")
         // 	d3.selectAll(".myCheckbox").on("change",update);
         // update();
 
-        // append country path to svg
-        country.append("path")
+        // append state path to svg
+        state.append("path")
             .attr("class", "line")
             .attr('id', function(d){ return 'line-' + d.id })
             .attr("d", function(d) {return line(d.values); })
@@ -192,8 +175,8 @@ DvModel.prototype.drawChart = function(state_data) {
         var longY = function (d) {return d.value.date.length};
         var longE = function (d) {return d.value.date.length};
 
-        // append country labels to svg
-        country.append("text")
+        // append state labels to svg
+        state.append("text")
             .datum(function(d) { return {id: d.id, value: d.values[d.values.length - 1]}; })
             .attr("transform", function(d) { return "translate(" + x(d.value.date) + "," + y(d.value.cases_new) + ")"; })
             .attr("x", 3)
@@ -222,32 +205,32 @@ DvModel.prototype.drawChart = function(state_data) {
             document.getElementById("menu").appendChild(divcheck);
 
             tick.addEventListener("click", function() {
+                console.log ("tick clicked!")
+                // var lineSelected = this.value;
+                // var svgline = d3.select('#line-' + lineSelected);
+                // var textline = d3.select('#text-' + lineSelected);
 
-                var lineSelected = this.value;
-                var svgline = d3.select('#line-' + lineSelected);
-                var textline = d3.select('#text-' + lineSelected);
+                // console.log(svgline);
+                // console.log(textline);
 
-                console.log(svgline);
-                console.log(textline);
+                // if(svgline.attr('opacity') === '0') {
+                //     // console.log('making it visible');
+                //     svgline.attr('opacity', 1);
+                // } else {
+                //     svgline.attr('opacity', 0);
+                // }
 
-                if(svgline.attr('opacity') === '0') {
-                    // console.log('making it visible');
-                    svgline.attr('opacity', 1);
-                } else {
-                    svgline.attr('opacity', 0);
-                }
-
-                // console.log("lineSelected:", lineSelected );
-                console.log("temp:", textline.attr('opacity'));
+                // // console.log("lineSelected:", lineSelected );
+                // console.log("temp:", textline.attr('opacity'));
                 
-                if(textline.attr('opacity') === '0') {
-                    console.log('making it visible');
-                    textline.attr('opacity', 1);
-                } else {
-                    textline.attr('opacity', 0);
-                }
-                this.style.background = '#555';
-                this.style.color = 'white';
+                // if(textline.attr('opacity') === '0') {
+                //     console.log('making it visible');
+                //     textline.attr('opacity', 1);
+                // } else {
+                //     textline.attr('opacity', 0);
+                // }
+                // this.style.background = '#555';
+                // this.style.color = 'white';
 
             });
         }//for              
