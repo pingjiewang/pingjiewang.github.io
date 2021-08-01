@@ -303,9 +303,11 @@ StateChartModel.prototype.drawChart_newCases = function() {
               .attr('y1', 0)
               .attr('y2', height);
             
-            let date_format = d3.timeFormat("%Y%m%d");
+            let date_format = d3.timeFormat("%Y-%m-%d");
+            var format_cases = d3.format(",d");
 
-            tooltip.html(date)
+
+            tooltip.html(date_format(date))
               .style('display', 'block')
               .style('left', d3.event.pageX + 20+"px")
               .style('top', d3.event.pageY - 20+"px")
@@ -315,8 +317,8 @@ StateChartModel.prototype.drawChart_newCases = function() {
             //   .style('color', d => d.color)
             //   .html(d => d.id + ': ' + d.values[0].cases_new);
             .html(d => d.id + ': ' + 
-                d.values.find( h => date_format(h.date)==date_format(date) 
-                ).cases_new 
+                format_cases(d.values.find( h => date_format(h.date)==date_format(date) 
+                ).cases_new )
             );
               // .html(d => d.name + ': ' + d.history.find(h => h.year == year).population);
             //   (h => date_format(h.date)==date_format(date) )
@@ -483,9 +485,10 @@ StateChartModel.prototype.drawChart_allDeaths = function() {
           .attr('y1', 0)
           .attr('y2', height);
         
-        let date_format = d3.timeFormat("%Y%m%d");
+        let date_format = d3.timeFormat("%Y-%m-%d");
+        var format_cases = d3.format(",d");
 
-        tooltip.html(date)
+        tooltip.html(date_format(date))
           .style('display', 'block')
           .style('left', d3.event.pageX + 20+"px")
           .style('top', d3.event.pageY - 20+"px")
@@ -495,8 +498,8 @@ StateChartModel.prototype.drawChart_allDeaths = function() {
         //   .style('color', d => d.color)
         //   .html(d => d.id + ': ' + d.values[0].deaths);
         .html(d => d.id + ': ' + 
-            d.values.find( h => date_format(h.date)==date_format(date) 
-            ).deaths 
+            format_cases(d.values.find( h => date_format(h.date)==date_format(date) 
+            ).deaths )
         );
           // .html(d => d.name + ': ' + d.history.find(h => h.year == year).population);
         //   (h => date_format(h.date)==date_format(date) )
@@ -661,19 +664,13 @@ UsChartModel.prototype.drawChart_newCases = function() {
     //append state data to svg
 
     let us = chart
-    // .selectAll(".state")
-    // .enter()
-    // .append("g")
     .attr("class", "us")
-    // 	d3.selectAll(".myCheckbox").on("change",update);
-    // update();
+
 
     // append state path to svg
     us.append("path")
         .datum(data)
         .attr("class", "line")
-        // .attr('id', function(d){ return 'line-' + d.id })
-        // .attr("d", function(d) {return line(d.values); })
         .attr("d", d3.line()
             .x(function(d) { return x(d.date) })
             .y(function(d) { return y(d.cases_new) })
@@ -681,6 +678,80 @@ UsChartModel.prototype.drawChart_newCases = function() {
         .style("stroke", function(d) {return z(d.id);})
         .attr("opacity", 1);
 
+    //annonations
+    const annotations = [
+        {
+          note: {
+            label: "1st peak",
+            title: "",
+            wrap: 100,  // try something smaller to see text split in several lines
+            padding: 5   // More = text lower
+          },
+          connector: {
+            end: "arrow" // 'dot' also available
+          },
+          x: 120,
+          y: 470,
+          dy: -150,
+          dx: -50,
+          color: ["red"],
+        },
+        {
+            note: {
+              label: "2nd peak",
+              title: "",
+              wrap: 100,  // try something smaller to see text split in several lines
+              padding: 5   // More = text lower
+            },
+            connector: {
+              end: "arrow" // 'dot' also available
+            },
+            x: 280,
+            y: 410,
+            dy: -150,
+            dx: -50,
+            color: ["red"],
+          },        
+          {
+            note: {
+              label: "3rd peak",
+              title: "",
+              wrap: 100,  // try something smaller to see text split in several lines
+              padding: 5   // More = text lower
+            },
+            connector: {
+              end: "arrow" // 'dot' also available
+            },
+            x: 550,
+            y: 110,
+            dy: -30,
+            dx: -50,
+            color: ["red"],
+          },
+          {
+            note: {
+              label: "4th wave",
+              title: "",
+              wrap: 100,  // try something smaller to see text split in several lines
+              padding: 5   // More = text lower
+            },
+            connector: {
+              end: "arrow" // 'dot' also available
+            },
+            x: 850,
+            y: 440,
+            dy: -70,
+            dx: -50,
+            color: ["red"],
+          }
+          
+      ]
+
+    // Add annotation to the chart
+    const makeAnnotations = d3.annotation()
+    .annotations(annotations)
+
+    chart.append("g").call(makeAnnotations)
 
 
     //tooltip
@@ -707,9 +778,10 @@ UsChartModel.prototype.drawChart_newCases = function() {
           .attr('y1', 0)
           .attr('y2', height);
         
-        let date_format = d3.timeFormat("%Y%m%d");
+        let date_format = d3.timeFormat("%Y-%m-%d");
+        var format_cases = d3.format(",d");
 
-        tooltip.html(date)
+        tooltip.html(date_format(date))
           .style('display', 'block')
           .style('left', d3.event.pageX + 20+"px")
           .style('top', d3.event.pageY - 20+"px")
@@ -859,6 +931,48 @@ UsChartModel.prototype.drawChart_allDeaths = function() {
         .attr("opacity", 1);
 
 
+    //annonations
+    const annotations = [
+        {
+        note: {
+            label: "1st jump",
+            title: "",
+            wrap: 100,  // try something smaller to see text split in several lines
+            padding: 5   // More = text lower
+        },
+        connector: {
+            end: "arrow" // 'dot' also available
+        },
+        x: 120,
+        y: 510,
+        dy: -150,
+        dx: -50,
+        color: ["red"],
+        },      
+        {
+            note: {
+            label: "2nd jump",
+            title: "",
+            wrap: 100,  // try something smaller to see text split in several lines
+            padding: 5   // More = text lower
+            },
+            connector: {
+            end: "arrow" // 'dot' also available
+            },
+            x: 500,
+            y: 280,
+            dy: -30,
+            dx: -50,
+            color: ["red"],
+        }
+        
+    ]
+
+    // Add annotation to this chart
+    const makeAnnotations = d3.annotation()
+    .annotations(annotations)
+    chart.append("g").call(makeAnnotations)
+
 
     //tooltip
     // const tooltip = d3.select('#tooltip3');
@@ -884,9 +998,10 @@ UsChartModel.prototype.drawChart_allDeaths = function() {
           .attr('y1', 0)
           .attr('y2', height);
         
-        let date_format = d3.timeFormat("%Y%m%d");
+        let date_format = d3.timeFormat("%Y-%m-%d");
+        var format_cases = d3.format(",d");
 
-        tooltip.html(date)
+        tooltip.html(date_format(date))
           .style('display', 'block')
           .style('left', d3.event.pageX + 20+"px")
           .style('top', d3.event.pageY - 20+"px")
