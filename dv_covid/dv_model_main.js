@@ -1,5 +1,6 @@
 function DvModel() {
     console.log ("in DvModel...")
+    this.state_names_selected = ["South Dakota", "Tennessee", "Texas", "Utah", "Vermont","Maryland"];
     this.init()
 }
 
@@ -34,21 +35,70 @@ DvModel.prototype.loadData = function() {
     d3.csv("data_processing_r/us-states_processed.csv", type, function(error, data) {
         if (error) throw error;
         console.log ("in loadData!")
-        
         console.log(data)
 
         //processing data
         // const cars = [{ make: 'audi', model: 'r8', year: '2012' }, { make: 'audi', model: 'rs5', year: '2013' }, { make: 'ford', model: 'mustang', year: '2012' }, { make: 'ford', model: 'fusion', year: '2015' }, { make: 'kia', model: 'optima', year: '2012' }];
         thisModel.raw_data = data;
         thisModel.state_data  = groupBy(data, (c) => c.state);
+        thisModel.state_names_all = Object.keys(thisModel.state_data);
        
-        thisModel.drawChart_newCases(thisModel.state_data);
+       // var state_names = Object.keys(this.state_data);
+        // console.log (state_names)
+        var state_dictionary = thisModel.state_data;
+        var data = thisModel.raw_data;
+    
+        thisModel.states = thisModel.state_names_selected.map(function (state_name){
+            return {
+                id : state_name,
+                values : state_dictionary[state_name]
+            }
+        });
+
+
+        thisModel.renderStateCheckboxes()
+        thisModel.drawChart_newCases();
 
     });
 
 };
 
-DvModel.prototype.drawChart_newCases = function(state_data) {
+DvModel.prototype.renderStateCheckboxes = function (){
+    //render checkboxes for all state in raw_data
+    for (let i = 0; i < this.state_names_all.length; i++) {
+        var tick = document.createElement('input');
+        tick.type = 'checkbox';
+        tick.id = 'myCheckbox';
+        var state_name = this.state_names_all[i];
+        // var state = this.state_data[state_name]
+        tick.name = state_name;
+        tick.value = state_name;
+
+        var label = document.createElement('label');
+        label.for = state_name
+        label.appendChild(document.createTextNode(state_name));
+        var divcheck = document.createElement('div');
+        // divcheck.id="state_" + state_name;
+        divcheck.className="nation" ;
+
+        // tick.appendChild(document.createTextNode(state_name));
+        divcheck.appendChild(tick);
+        divcheck.appendChild(label);
+        document.getElementById("menu").appendChild(divcheck);
+
+        tick.addEventListener("click", function() {
+            console.log ("tick clicked!", this.value)
+            // var lineSelected = this.value;
+            // var svgline = d3.select('#line-' + lineSelected);
+            // var textline = d3.select('#text-' + lineSelected);
+
+        });
+    }//for    
+}
+
+DvModel.prototype.drawChart_newCases = function() {
+
+        let states = this.states;
 
         //define chart margins
         let svg = d3.select("svg"),
@@ -80,25 +130,26 @@ DvModel.prototype.drawChart_newCases = function(state_data) {
             });  
     
 
-
-        var state_names = Object.keys(this.state_data);
-        var state_dictionary = this.state_data;
-        var data = this.raw_data;
-        var state_names_selected = state_names.slice(50);//todo: tempoary
+        // // var state_names = Object.keys(this.state_data);
+        // // console.log (state_names)
+        // var state_dictionary = this.state_data;
+        // var data = this.raw_data;
+    
        
         
-        var states = state_names_selected.map(function (state_name){
-            return {
-                id : state_name,
-                values : state_dictionary[state_name]
-            }
-        });
+        // this.states = this.state_names_selected.map(function (state_name){
+        //     return {
+        //         id : state_name,
+        //         values : state_dictionary[state_name]
+        //     }
+        // });
 
 
         //define x axis
-        x.domain(d3.extent(data, function(d) {
+        x.domain(d3.extent(this.raw_data, function(d) {
             return d.date;
         }));
+
         //define y axis
         y.domain([
             d3.min(states, function(c) {
@@ -186,54 +237,7 @@ DvModel.prototype.drawChart_newCases = function(state_data) {
             .attr("opacity", 1)
                 .text(function(d) { return d.id; });
 
-
-        for (let i = 0; i < states.length; i++) {
-            var tick = document.createElement('input');
-            tick.type = 'checkbox';
-            tick.id = 'myCheckbox';
-            tick.name = states[i].id;
-            tick.value = states[i].id;
-
-            var label = document.createElement('label');
-            label.for = states[i].id
-            label.appendChild(document.createTextNode(states[i].id));
-            var divcheck = document.createElement('div');
-            divcheck.id="nation";
-            // tick.appendChild(document.createTextNode(states[i].id));
-            divcheck.appendChild(tick);
-            divcheck.appendChild(label);
-            document.getElementById("menu").appendChild(divcheck);
-
-            tick.addEventListener("click", function() {
-                console.log ("tick clicked!")
-                // var lineSelected = this.value;
-                // var svgline = d3.select('#line-' + lineSelected);
-                // var textline = d3.select('#text-' + lineSelected);
-
-                // console.log(svgline);
-                // console.log(textline);
-
-                // if(svgline.attr('opacity') === '0') {
-                //     // console.log('making it visible');
-                //     svgline.attr('opacity', 1);
-                // } else {
-                //     svgline.attr('opacity', 0);
-                // }
-
-                // // console.log("lineSelected:", lineSelected );
-                // console.log("temp:", textline.attr('opacity'));
-                
-                // if(textline.attr('opacity') === '0') {
-                //     console.log('making it visible');
-                //     textline.attr('opacity', 1);
-                // } else {
-                //     textline.attr('opacity', 0);
-                // }
-                // this.style.background = '#555';
-                // this.style.color = 'white';
-
-            });
-        }//for              
+          
 
         // });//end load data
     

@@ -32,9 +32,11 @@ flex-wrap: wrap;
     /* padding: 1%; */
 }
 
-#nation{
-    display: inline;
+.nation{
+    display: inline-block;
     padding-left: 1%;
+    width: 200px;
+
 }
 
 span{
