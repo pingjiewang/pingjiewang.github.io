@@ -202,7 +202,7 @@
 				.append("g")
 				.attr("class", "country")
 			// 	d3.selectAll(".myCheckbox").on("change",update);
-      // update();
+      		// update();
 
 			// append country path to svg
 			country.append("path")
@@ -216,6 +216,7 @@
 
 			var longY = function (d) {return d.value.Year.length};
 			var longE = function (d) {return d.value.Year.length};
+
 			// append country labels to svg
 			country.append("text")
 				.datum(function(d) { return {id: d.id, value: d.values[d.values.length - 1]}; })
@@ -226,6 +227,8 @@
 				.style("font", "11px sans-serif")
 				.attr("opacity", 0)
 				.text(function(d) { return d.id; });
+
+
 
 			for (let i = 0; i < countries.length; i++) {
 				var tick = document.createElement('input');
