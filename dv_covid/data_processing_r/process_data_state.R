@@ -26,7 +26,7 @@ t$deaths_new=t$deaths-t$deaths_before
 t$cases_new[t$cases_new<0] = 0
 t$deaths_new[t$deaths_new<0] = 0
 
-us_states1=t[,c("state","date","fips","cases","cases_new","deaths","cases_new")]
+us_states1=t[,c("state","date","fips","cases","cases_new","deaths","deaths_new")]
 
 write.csv(us_states1,"us-states_processed.csv",quote=FALSE,row.names = FALSE)
 

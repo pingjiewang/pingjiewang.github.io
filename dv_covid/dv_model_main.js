@@ -1,8 +1,9 @@
 function DvModel() {
+    
+    //US level charts
+    this.modelUsChart = new UsChartModel();
+    //state level charts
     this.modelStateChart = new StateChartModel();
-    this.modelStateChart.init();
-    // this.init();
-
 }
 
 // DvModel.prototype.init = function() {
@@ -10,7 +11,7 @@ function DvModel() {
 
 //------------- StateChartModel
 function StateChartModel() {
-    var initialSelectedStates=["South Dakota", "Tennessee", "Texas", "Utah", "Vermont","Maryland"];
+    var initialSelectedStates=["Texas", "New York","Maryland"];
     this.state_names_selected_set = new Set(initialSelectedStates);
     this.init()
 }
@@ -514,10 +515,16 @@ StateChartModel.prototype.drawChart_allDeaths = function() {
 
 //UsChartModel
 function UsChartModel() {
+    console.log("UsChartModel()")
     this.init()
 }
 
 UsChartModel.prototype.init = function() {
+    console.log("init()")
+    this.SELECTOR_SVG = '#container1 .graph svg';
+    this.SELECTOR_TOOLTIP = '#tooltip1';
+    this.SELECTOR_SVG2 = '#container2 .graph svg';
+    this.SELECTOR_TOOLTIP2 = '#tooltip2';
     this.startWithLoadingData()
 };
 
@@ -539,25 +546,367 @@ UsChartModel.prototype.startWithLoadingData = function() {
     var thisModel=this;
 
     //todo: change the file name
-    d3.csv("data_processing_r/us-states_processed.csv", type, function(error, data) {
+    d3.csv("data_processing_r/us_processed.csv", type, function(error, data) {
         if (error) throw error;
         //save the data as a model state
         thisModel.raw_data = data;
 
+        console.log(data)
+        console.log(thisModel.raw_data)
+
         //processed the data for creating chart
-        thisModel.processDataForDrawingChart();
+        // console.log("No need to call çprocessDataForDrawingChart() here! ");
+        // thisModel.processDataForDrawingChart();
 
         //trigger Drawing function
-        thisModel.renderStateCheckboxes()
+        // console.log("Will call UsChartModel.drawChart_newCases() here! ")
         thisModel.drawChart_newCases();
-
+        thisModel.drawChart_allDeaths();
 
     });
 
 };
+
+UsChartModel.prototype.drawChart_newCases = function() {
+
+    let data = this.raw_data;
+
+    //define chart margins
+    // let svg = d3.select("svg"),
+    let svg = d3.select(this.SELECTOR_SVG),
+        margin = {
+            top: 30,
+            right: 80,
+            bottom: 40,
+            left: 50
+        },
+        width = svg.attr("width") - margin.left - margin.right,
+        height = svg.attr("height") - margin.top - margin.bottom,
+        chart = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    //define scales
+    let x = d3.scaleTime().range([0, width]);
+    let y = d3.scaleLinear().range([height, 0]);
+    //color scale
+    let z = d3.scaleOrdinal(d3.schemeCategory20);
+
+    // //define line generator
+    // let line = d3.line()
+    //     .curve(d3.curveBasis)
+    //     .x(function(d) {
+    //         return x(d.date);
+    //     })
+    //     .y(function(d) {
+    //             return y(d.cases_new);
+    //     });  
+
+    //define x axis
+    x.domain(d3.extent(data, function(d) {
+        return d.date;
+    }));
+
+    //define y axis
+    y.domain([
+        d3.min(data, function(c) {
+            return c.cases_new;
+        }),
+        d3.max(data, function(c) {
+            return c.cases_new;
+        })
+    ]);
+
+  
+
+
+    // //define color scale
+    // z.domain(states.map(function(c) {
+    //     return c.id;
+    // }));
+
+
+    //append x axis
+    chart.append("g")
+        .attr("class", "axis axis-x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m")))
+        .append("text")
+        // .attr("transform", "rotate(-90)")
+        .attr("y", 20)
+        .attr("x", 310)
+        .attr("dy", "0.9em")
+        .attr("fill", "#000")
+        .text("Date")
+        .append("text")
+        // .attr("transform", "rotate(-90)")
+        .attr("y", 20)
+        .attr("x", 310)
+        .attr("dy", "0.9em")
+        .attr("fill", "#000")
+        .text("Source:Sipri");
+
+    //append y axis
+    chart.append("g")
+        .attr("class", "axis axis-y")
+        .call(d3.axisLeft(y))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -50)
+        .attr("x", -125)
+        .attr("dy", "0.9em")
+        .attr("fill", "#000")
+        .text("US Covid-19 daily new cases");
+
+
+    //append state data to svg
+
+    let us = chart
+    // .selectAll(".state")
+    // .enter()
+    // .append("g")
+    .attr("class", "us")
+    // 	d3.selectAll(".myCheckbox").on("change",update);
+    // update();
+
+    // append state path to svg
+    us.append("path")
+        .datum(data)
+        .attr("class", "line")
+        // .attr('id', function(d){ return 'line-' + d.id })
+        // .attr("d", function(d) {return line(d.values); })
+        .attr("d", d3.line()
+            .x(function(d) { return x(d.date) })
+            .y(function(d) { return y(d.cases_new) })
+        )
+        .style("stroke", function(d) {return z(d.id);})
+        .attr("opacity", 1);
+
+
+
+    //tooltip
+    // const tooltip = d3.select('#tooltip3');
+    const tooltip = d3.select(this.SELECTOR_TOOLTIP);
+    const tooltipLine = chart.append('line');
+        
+    let removeTooltip = function () {
+        if (tooltip) tooltip.style('display', 'none');
+        if (tooltipLine) tooltipLine.attr('stroke', 'none');
+    }
+
+    let drawTooltip= function () {
+        // const date = Math.floor((x.invert(d3.mouse(tipBox.node())[0]) + 5) / 10) * 10;
+        const date = x.invert(d3.mouse(tipBox.node())[0]);
+        
+        // states.sort((a, b) => {
+        //   return b.history.find(h => h.year == year).population - a.history.find(h => h.year == year).population;
+        // })  
+          
+        tooltipLine.attr('stroke', 'black')
+          .attr('x1', x(date))
+          .attr('x2', x(date))
+          .attr('y1', 0)
+          .attr('y2', height);
+        
+        let date_format = d3.timeFormat("%Y%m%d");
+
+        tooltip.html(date)
+          .style('display', 'block')
+          .style('left', d3.event.pageX + 20+"px")
+          .style('top', d3.event.pageY - 20+"px")
+          .selectAll()
+        //   .data(data).enter()
+          .append('div')
+        //   .style('color', d => d.color)
+        //   .html(d => d.id + ': ' + d.values[0].cases_new);
+        .html('New cases: ' 
+            // + 
+            // d.find( h => date_format(h.date)==date_format(date) 
+            // ).cases_new 
+        );
+          
+    }
+
+    let tipBox = chart.append('rect')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('opacity', 0)
+        .on('mousemove', drawTooltip)
+        .on('mouseout', removeTooltip)   
+}   
+
+
 
 
 //Misc helper functions
 function groupBy (xs, f) {
     return xs.reduce((r, v, i, a, k = f(v)) => ((r[k] || (r[k] = [])).push(v), r), {});
 }
+
+
+
+UsChartModel.prototype.drawChart_allDeaths = function() {
+
+    let data = this.raw_data;
+
+    //define chart margins
+    // let svg = d3.select("svg"),
+    let svg = d3.select(this.SELECTOR_SVG2),
+        margin = {
+            top: 30,
+            right: 80,
+            bottom: 40,
+            left: 50
+        },
+        width = svg.attr("width") - margin.left - margin.right,
+        height = svg.attr("height") - margin.top - margin.bottom,
+        chart = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    //define scales
+    let x = d3.scaleTime().range([0, width]);
+    let y = d3.scaleLinear().range([height, 0]);
+    //color scale
+    let z = d3.scaleOrdinal(d3.schemeCategory20);
+
+    // //define line generator
+    // let line = d3.line()
+    //     .curve(d3.curveBasis)
+    //     .x(function(d) {
+    //         return x(d.date);
+    //     })
+    //     .y(function(d) {
+    //             return y(d.deaths);
+    //     });  
+
+    //define x axis
+    x.domain(d3.extent(data, function(d) {
+        return d.date;
+    }));
+
+    //define y axis
+    y.domain([
+        d3.min(data, function(c) {
+            return c.deaths;
+        }),
+        d3.max(data, function(c) {
+            return c.deaths;
+        })
+    ]);
+
+  
+
+
+    // //define color scale
+    // z.domain(states.map(function(c) {
+    //     return c.id;
+    // }));
+
+
+    //append x axis
+    chart.append("g")
+        .attr("class", "axis axis-x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m")))
+        .append("text")
+        // .attr("transform", "rotate(-90)")
+        .attr("y", 20)
+        .attr("x", 310)
+        .attr("dy", "0.9em")
+        .attr("fill", "#000")
+        .text("Date")
+        .append("text")
+        // .attr("transform", "rotate(-90)")
+        .attr("y", 20)
+        .attr("x", 310)
+        .attr("dy", "0.9em")
+        .attr("fill", "#000")
+        .text("Source:Sipri");
+
+    //append y axis
+    chart.append("g")
+        .attr("class", "axis axis-y")
+        .call(d3.axisLeft(y))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -50)
+        .attr("x", -125)
+        .attr("dy", "0.9em")
+        .attr("fill", "#000")
+        .text("US Covid-19 daily new cases");
+
+
+    //append state data to svg
+
+    let us = chart
+    // .selectAll(".state")
+    // .enter()
+    // .append("g")
+    .attr("class", "us")
+    // 	d3.selectAll(".myCheckbox").on("change",update);
+    // update();
+
+    // append state path to svg
+    us.append("path")
+        .datum(data)
+        .attr("class", "line")
+        // .attr('id', function(d){ return 'line-' + d.id })
+        // .attr("d", function(d) {return line(d.values); })
+        .attr("d", d3.line()
+            .x(function(d) { return x(d.date) })
+            .y(function(d) { return y(d.deaths) })
+        )
+        .style("stroke", function(d) {return z(d.id);})
+        .attr("opacity", 1);
+
+
+
+    //tooltip
+    // const tooltip = d3.select('#tooltip3');
+    const tooltip = d3.select(this.SELECTOR_TOOLTIP2);
+    const tooltipLine = chart.append('line');
+        
+    let removeTooltip = function () {
+        if (tooltip) tooltip.style('display', 'none');
+        if (tooltipLine) tooltipLine.attr('stroke', 'none');
+    }
+
+    let drawTooltip= function () {
+        // const date = Math.floor((x.invert(d3.mouse(tipBox.node())[0]) + 5) / 10) * 10;
+        const date = x.invert(d3.mouse(tipBox.node())[0]);
+        
+        // states.sort((a, b) => {
+        //   return b.history.find(h => h.year == year).population - a.history.find(h => h.year == year).population;
+        // })  
+          
+        tooltipLine.attr('stroke', 'black')
+          .attr('x1', x(date))
+          .attr('x2', x(date))
+          .attr('y1', 0)
+          .attr('y2', height);
+        
+        let date_format = d3.timeFormat("%Y%m%d");
+
+        tooltip.html(date)
+          .style('display', 'block')
+          .style('left', d3.event.pageX + 20+"px")
+          .style('top', d3.event.pageY - 20+"px")
+          .selectAll()
+        //   .data(data).enter()
+          .append('div')
+        //   .style('color', d => d.color)
+        //   .html(d => d.id + ': ' + d.values[0].deaths);
+        .html('New cases: ' 
+            // + 
+            // d.find( h => date_format(h.date)==date_format(date) 
+            // ).deaths 
+        );
+          
+    }
+
+    let tipBox = chart.append('rect')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('opacity', 0)
+        .on('mousemove', drawTooltip)
+        .on('mouseout', removeTooltip)   
+}   
