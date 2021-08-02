@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Narrative Visualization of COVID-19</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
         integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
@@ -15,28 +15,26 @@
 
 </head>
 <body>
+    <h1>Are we entering another new wave of COVID-19?</h1>
+    <p>Since March 2020 we have had serval wave of COVID-19, below is a chart of US daily new COVID-19 cases
+    </p>
+
+
 	<div id="container">
 		<p>Click on one or more states to view data on daily Covid-19 new cases  
         </p>
-	<div id="menu"></div>
+        <div id="menu"></div>
 
-	<div class="graph">
-		<svg width="1200" height="600"></svg>
-	</div>
-
+        <div class="graph">
+            <svg width="1200" height="600"></svg>
+        </div>
 	</div>
     <div id='tooltip' style='position:absolute;background-color:lightgray;padding:5px'></div>
 
     <script type="text/javascript">
-        //define time format
-
         $(document).ready(function(){
-            //create model
-            // mapSelectableModel = new samhsa.locator.MapSelectableModelNormal(modelOptions);
-            // mapSelectableModel.hideSidePanelFacilityListing();
             new DvModel() 
         }); //end of document.ready()
-
     </script>
 </body>
 </html>
